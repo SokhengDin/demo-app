@@ -1,27 +1,20 @@
 {
-  "name": "demo-app",
-  "version": "0.1.0",
-  "private": true,
+  "name": "cambria-shop",
+  "version": "1.0.0",
+  "description": "Deliberately-buggy demo shop app for QA Sentinel to test",
+  "main": "server.js",
+  "type": "commonjs",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "build:css": "tailwindcss -i ./public/input.css -o ./public/style.css --minify",
+    "watch:css": "tailwindcss -i ./public/input.css -o ./public/style.css --watch"
   },
   "dependencies": {
-    "next": "16.2.10",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "zod": "^4.4.3"
+    "express": "^4.21.2"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.10",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@tailwindcss/cli": "^4.3.2",
+    "tailwindcss": "^4.3.2"
   }
 }
