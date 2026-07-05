@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { formatPrice, placeholderColor, iconTint } from "@/lib/format";
+import { useSyncExternalStore } from "react";
+import { placeholderColor, iconTint } from "@/lib/format";
 import { ProductIcon } from "@/lib/product-icons";
 
 type ShippedItem = { productId: string; quantity: number };
@@ -16,21 +16,26 @@ const PRODUCT_INFO: Record<string, { name: string; price: number }> = {
   p6: { name: "Steel Water Bottle", price: 2600 },
 };
 
-export default function ConfirmationPage() {
-  const [items, setItems] = useState<ShippedItem[] | null>(null);
+function subscribe() {
+  return () => {};
+}
 
-  useEffect(() => {
-    const raw = sessionStorage.getItem("cambria_last_order");
-    if (raw) {
-      try {
-        setItems(JSON.parse(raw));
-      } catch {
-        setItems([]);
-      }
-    } else {
-      setItems([]);
-    }
-  }, []);
+function getLastOrder(): ShippedItem[] {
+  const raw = sessionStorage.getItem("cambria_last_order");
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+function getServerSnapshot(): ShippedItem[] {
+  return [];
+}
+
+export default function ConfirmationPage() {
+  const items = useSyncExternalStore(subscribe, getLastOrder, getServerSnapshot);
 
   return (
     <div className="flex flex-1 items-center justify-center px-6 py-10">

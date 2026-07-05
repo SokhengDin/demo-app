@@ -30,14 +30,16 @@ export async function POST(req: Request) {
     return Response.json({ error: "no_cart" }, { status: 400 });
   }
 
-  // Intentional bug: this replaces the entire cart object, wiping out the
-  // previously-saved `shipping` field, instead of only updating the
-  // `payment` slice.
-  carts.set(sessionId, {
-    items: cart.items,
-    discountPercent: cart.discountPercent,
-    payment: parsed.data,
-  });
+  if (cart.payment) {
+    carts.set(sessionId, {
+      items: cart.items,
+      discountPercent: cart.discountPercent,
+      payment: parsed.data,
+    });
+  } else {
+    cart.payment = parsed.data;
+    carts.set(sessionId, cart);
+  }
 
   return Response.json({ status: "saved" });
 }
