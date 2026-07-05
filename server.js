@@ -21,6 +21,7 @@ const DISCOUNT_CODES = { SAVE10: 0.1 };
 // property off an undefined entry, throwing an unhandled TypeError, which
 // Express turns into a bare 500 with no user-facing message.
 const SHIPPING_COST_BY_PRODUCT = {
+  "ceramic-mug": { flatRate: 2.0 },
   "steel-bottle": { flatRate: 4.0 },
   "canvas-tote": { flatRate: 3.0 },
 };
@@ -88,7 +89,10 @@ app.post("/api/cart/apply-discount", (req, res) => {
   // exact case-sensitive match for a real key throws an unhandled
   // TypeError ("Cannot destructure property 'rate' of undefined"),
   // producing a bare 500 with no "invalid code" message.
-  const { rate } = DISCOUNT_CODES[code];
+  const rate = DISCOUNT_CODES[code];
+  if (rate === undefined) {
+    return res.status(400).json({ error: "invalid_code" });
+  }
   session.discountRate = rate;
   session.discountCode = code;
   res.json({ status: "ok", discountRate: session.discountRate });
@@ -100,7 +104,8 @@ app.post("/api/checkout", (req, res) => {
   let orderTotal = 0;
   for (const [productId, quantity] of Object.entries(session.cart)) {
     const product = PRODUCTS[productId];
-    const { flatRate } = SHIPPING_COST_BY_PRODUCT[productId];
+    const shipping = SHIPPING_COST_BY_PRODUCT[productId] || { flatRate: 0.0 };
+    const { flatRate } = shipping;
     orderTotal += (product.price + flatRate) * quantity;
   }
 
