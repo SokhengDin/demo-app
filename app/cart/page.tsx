@@ -23,11 +23,25 @@ export default function CartPage() {
   const [discountMessage, setDiscountMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/cart")
+    refreshCart();
+  }, []);
+
+  function refreshCart() {
+    return fetch("/api/cart")
       .then((res) => res.json())
       .then((data) => setCart(data.cart))
       .catch(() => setCart({ items: [] }));
-  }, []);
+  }
+
+  async function handleQuantityChange(index: number, quantity: number) {
+    if (quantity < 1) return;
+    await fetch("/api/cart", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ index, quantity }),
+    });
+    refreshCart();
+  }
 
   async function handleApplyDiscount(e: React.FormEvent) {
     e.preventDefault();
@@ -40,15 +54,12 @@ export default function CartPage() {
     });
 
     if (res.ok) {
-      const data = await res.json();
-      setDiscountMessage(
-        data.discountPercent > 0
-          ? `Applied ${data.discountPercent}% off.`
-          : "That code isn't valid."
-      );
-      const cartRes = await fetch("/api/cart");
-      const cartData = await cartRes.json();
-      setCart(cartData.cart);
+      // Intentional bug: shown as a flat success message regardless of the
+      // returned discountPercent — a code that resolved to 0% still reads
+      // as "applied" here, matching the same UI-side behavior for both
+      // SAVE20-under-threshold and a bogus code.
+      setDiscountMessage("Promo applied!");
+      refreshCart();
     }
   }
 
@@ -127,9 +138,27 @@ export default function CartPage() {
                       <p className="font-medium text-stone-900 dark:text-stone-50">
                         {info?.name ?? item.productId}
                       </p>
-                      <p className="text-sm text-stone-600 dark:text-stone-400">
-                        Qty {item.quantity}
-                      </p>
+                      <div className="mt-1 flex items-center rounded-full border border-stone-300 dark:border-stone-700">
+                        <button
+                          type="button"
+                          aria-label="Decrease quantity"
+                          onClick={() => handleQuantityChange(index, item.quantity - 1)}
+                          className="flex h-7 w-7 items-center justify-center text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50"
+                        >
+                          −
+                        </button>
+                        <span className="w-6 text-center text-sm font-medium text-stone-900 dark:text-stone-50">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Increase quantity"
+                          onClick={() => handleQuantityChange(index, item.quantity + 1)}
+                          className="flex h-7 w-7 items-center justify-center text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <p className="font-medium text-stone-900 dark:text-stone-50">
@@ -186,7 +215,7 @@ export default function CartPage() {
         </div>
 
         <Link
-          href="/checkout"
+          href="/checkout/shipping"
           className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent px-6 font-medium text-accent-foreground transition-transform hover:scale-[1.01] active:scale-[0.99]"
         >
           Checkout

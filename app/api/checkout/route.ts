@@ -1,11 +1,17 @@
-import { carts } from "@/lib/store";
+import { carts, products, type CartItem } from "@/lib/store";
 import { readSessionId } from "@/lib/session";
 
-export async function POST(req: Request) {
-  if (!req.headers.get("x-client-version")) {
-    return Response.json({ error: "missing_client_header" }, { status: 403 });
-  }
+function clampToStock(items: CartItem[]): CartItem[] {
+  // Intentional bug: silently clamps with no error, no warning field in the
+  // response, nothing that would let the client detect this happened.
+  return items.map((item) => {
+    const product = products.get(item.productId);
+    const maxQty = product?.stock ?? 0;
+    return { ...item, quantity: Math.min(item.quantity, maxQty) };
+  });
+}
 
+export async function POST() {
   const sessionId = await readSessionId();
   const cart = sessionId ? carts.get(sessionId) : undefined;
 
@@ -13,7 +19,17 @@ export async function POST(req: Request) {
     return Response.json({ error: "empty_cart" }, { status: 400 });
   }
 
+  if (!cart.shipping) {
+    return Response.json({ error: "missing_shipping_info" }, { status: 400 });
+  }
+
+  if (!cart.payment) {
+    return Response.json({ error: "missing_payment_info" }, { status: 400 });
+  }
+
+  const shippedItems = clampToStock(cart.items);
+
   carts.delete(sessionId!);
 
-  return Response.json({ status: "order_placed" });
+  return Response.json({ status: "order_placed", items: shippedItems });
 }

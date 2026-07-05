@@ -7,9 +7,26 @@ export type Product = {
 
 export type CartItem = { productId: string; quantity: number };
 
+export type ShippingInfo = {
+  name: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  country: string;
+};
+
+export type PaymentInfo = {
+  cardNumber: string;
+  expiry: string;
+  cvc: string;
+  billingAddress?: string;
+};
+
 export type Cart = {
   items: CartItem[];
   discountPercent?: number;
+  shipping?: ShippingInfo;
+  payment?: PaymentInfo;
 };
 
 export const products: Map<string, Product> = new Map([
@@ -22,3 +39,10 @@ export const products: Map<string, Product> = new Map([
 ]);
 
 export const carts: Map<string, Cart> = new Map();
+
+export function calculateSubtotal(cart: Cart): number {
+  return cart.items.reduce((sum, item) => {
+    const product = products.get(item.productId);
+    return sum + (product ? product.price * item.quantity : 0);
+  }, 0);
+}
